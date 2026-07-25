@@ -44,3 +44,10 @@ func (c *Context) JSON(code int, obj interface {}) {
 		http.Error(c.Writer, err.Error(), 500)
 	}  
 }
+
+// BindJSON reads the incoming HTTP request body and decodes it into Go struct
+func (c *Context) BindJSON(obj interface{}) error{
+	decoder := json.NewDecoder(c.Req.Body)
+	defer c.Req.Body.Close()
+	return decoder.Decode(obj)
+}

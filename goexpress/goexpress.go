@@ -21,6 +21,19 @@ func (e *Engine) GET (path string, handler RouteHandler) {
 	e.router["GET-"+path] = handler
 }
 
+func (e *Engine) POST (path string, handler RouteHandler) {
+	e.router["POST-"+path] = handler
+}
+
+func (e *Engine) PUT (path string, handler RouteHandler) {
+	e.router["PUT-"+path] = handler
+}
+
+func (e *Engine) DELETE (path string, handler RouteHandler) {
+	e.router["DELETE-"+path] = handler
+}
+
+
 func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	key := r.Method + "-" + r.URL.Path
 

@@ -1,6 +1,7 @@
 package goexpress
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -89,5 +90,116 @@ func TestContextWithJSON(t *testing.T) {
 
 	if response["status"] != "ok" {
 		t.Errorf("Expected JSON status 'ok', got '%s'", response["status"])
+	}
+}
+
+// Test 4: Testing POST method widh BindJSON
+func TestPostAndBindJSON(t *testing.T){
+	engine := NEW()
+
+	// 1. Define a dummy struct for testing
+	type Payload struct {
+		Message string `json:"message"`
+	}
+
+	// 2. Register a POST route that reads JSON and echoes it Back
+	engine.POST("/echo", func(c *Context) {
+		var p Payload
+		if err := c.BindJSON(&p); err != nil {
+			c.String(http.StatusBadRequest, "bad request")
+			return
+		}
+
+		// If successful, send a 201 created status
+		c.String(http.StatusCreated, "Received: "+p.Message)
+	})
+
+	// 3. Forge the incoming JSON body
+	// bytes.NewBuffer turns a raw stream into io.Reader stream that httptest requires
+	jsonBody := []byte(`{"message": "hello framework"}`)
+	bodyReader := bytes.NewBuffer(jsonBody)
+
+	// 4. Create a fake POST request
+	req := httptest.NewRequest("POST", "/echo", bodyReader)
+	w := httptest.NewRecorder()
+
+	// 5. Execute
+	engine.ServeHTTP(w, req)
+
+	// 6. Assertions
+	if w.Code != http.StatusCreated {
+		t.Errorf("Expected sttus code 201, got %d", w.Code)
+	}
+
+	expectedBody := "Received: hello framework"
+
+	if w.Body.String() != expectedBody {
+		t.Errorf("Expected body '%s', got '%s'", expectedBody, w.Body.String())
+	}
+}
+
+// Test 5: Testing Put request
+func TestPutRouting(t *testing.T) {
+	engine := NEW()
+
+	// 1. Define a dummy struct for testing
+	type Payload struct {
+		Role string `json:"role"`
+	} 
+
+	// 2. Register put routes for updates
+	engine.PUT("/users/1/role", func(c *Context) {
+		var p Payload
+
+		if err := c.BindJSON(&p); err != nil {
+			c.String(http.StatusBadRequest, "bad reqest")
+			return
+		}
+
+		c.String(http.StatusOK, "Role updated to: "+p.Role)
+	})
+
+	// 3. Forge the incoming JSON body
+	jsonBody := []byte(`{"Role": "Admin"}`)
+	bodyReader := bytes.NewBuffer(jsonBody)
+
+	// 4. Create fake PUT request
+	req := httptest.NewRequest("PUT", "/users/1/role", bodyReader)
+	w := httptest.NewRecorder()
+
+	// 5. Execute
+	engine.ServeHTTP(w, req)
+
+	// 6. Assertions
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected sttus code 200, got %d", w.Code)
+	}
+
+	expectedBody := "Role updated to: Admin"
+
+	if w.Body.String() != expectedBody {
+		t.Errorf("Expected body '%s', got '%s'", expectedBody, w.Body.String())
+	}
+}
+
+// 6. Testing DELETE route
+func TestDeleteRouting(t *testing.T) {
+	engine := NEW()
+
+	// 1. Setup mock route
+	engine.DELETE("/remove", func(c *Context) {
+		c.String(http.StatusOK, "Deleted")
+	})
+
+	// 2. Make fake request
+	req := httptest.NewRequest("DELETE", "/remove", nil)
+	w := httptest.NewRecorder()
+
+	// 3. Execute
+	engine.ServeHTTP(w, req)
+
+	// 4. Assertions
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected sttus code 200, got %d", w.Code)
 	}
 }
