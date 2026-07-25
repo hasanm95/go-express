@@ -9,10 +9,20 @@ import (
 func main (){
 	g := goexpress.NEW()
 
-	g.GET("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Welcome to Go Framework Lab 1!\n"))
+	g.GET("/", func(c *goexpress.Context) {
+		c.String(http.StatusOK, "Welcome to Go Framework Lab 1!\n")
 	})
 
+	g.GET("/hello", func(c *goexpress.Context) {
+		c.String(http.StatusOK, "hello world\n")
+	})
+	
+	g.GET("/api/info", func(c *goexpress.Context) {
+		c.JSON(200, map[string]interface{}{
+			"framework": "GoExpress",
+			"version":   "2.0",
+			"author":    "Your Name",
+		})
+	})
 	g.Run(":8080")
 }
