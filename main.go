@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/hasanm95/go-express/goexpress"
 )
@@ -15,6 +16,7 @@ type User struct {
 // The In-Memory Datastore
 // Maps a string ID (like "1") to a User struct
 var userDB = make(map[string]User)
+var idCounter = 1
 
 func main (){
 	g := goexpress.NEW()
@@ -34,46 +36,78 @@ func main (){
 	})
 
 	// Create: Add new user
-	g.POST("/user", func(c *goexpress.Context) {
+	g.POST("/users", func(c *goexpress.Context) {
 		var newUser User
 		if err := c.BindJSON(&newUser); err != nil {
 			c.String(http.StatusBadRequest, "Invalid JSON data")
 			return;
 		}
 
+		// Generate a new ID as a string
+        id := strconv.Itoa(idCounter)
+        idCounter++
+
 		// Save to our fake database (Hardcoding ID "1" for simplicity)
-		userDB["1"] = newUser
-		c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully"})
+		userDB[id] = newUser
+		c.JSON(http.StatusCreated, map[string]string{"id": id, "message": "User created successfully"})
 	})
 
-	// Read: Get the user
-	g.GET("/user", func(c *goexpress.Context) {
-		if user, exists := userDB["1"]; exists {
-			c.JSON(http.StatusOK, user)
-		} else {
-			c.String(http.StatusNotFound, "user not found")
-		}
-	})
+    // READ ALL: Get the entire collection of users
+    g.GET("/users", func(c *goexpress.Context) {
+        if len(userDB) == 0 {
+            c.JSON(http.StatusOK, map[string]string{"message": "No users found"})
+            return
+        }
+        c.JSON(http.StatusOK, userDB)
+    })
 
-	// Update: modify user data
-	g.PUT("/user", func(c *goexpress.Context) {
-		var updatedUser User
-		if err := c.BindJSON(&updatedUser); err != nil {
-			c.String(http.StatusBadRequest, "Invalid JSON data")
-			return
-		}
+	// READ: Get a specific user by dynamic ID (Targeting an item: /users/:id)
+    g.GET("/users/:id", func(c *goexpress.Context) {
+        id := c.Param("id")
+        
+        if user, exists := userDB[id]; exists {
+            c.JSON(http.StatusOK, user)
+        } else {
+            c.String(http.StatusNotFound, "User not found")
+        }
+    })
 
-		// Update db
-		userDB["1"] = updatedUser
-		c.JSON(http.StatusOK, map[string]string{"message": "User updated successfully"})
-	})
+    // UPDATE: Modify a specific user by dynamic ID
+    g.PUT("/users/:id", func(c *goexpress.Context) {
+        id := c.Param("id") // Extract ID from the URL
+        
+        if _, exists := userDB[id]; !exists {
+            c.String(http.StatusNotFound, "User not found")
+            return
+        }
 
-	// Delete: Delete user
-	g.DELETE("/user", func(c *goexpress.Context) {
-		delete(userDB, "1")
-		c.String(http.StatusOK, "User deleted")
-	})
+        var updatedUser User
+        if err := c.BindJSON(&updatedUser); err != nil {
+            c.String(http.StatusBadRequest, "Invalid JSON data")
+            return
+        }
+        
+        userDB[id] = updatedUser
+        c.JSON(http.StatusOK, map[string]string{"message": "User " + id + " updated"})
+    })
 
+    // DELETE: Remove a specific user by dynamic ID
+    g.DELETE("/users/:id", func(c *goexpress.Context) {
+        id := c.Param("id")
+        
+        if _, exists := userDB[id]; exists {
+            delete(userDB, id)
+            c.String(http.StatusOK, "User " + id + " deleted")
+        } else {
+            c.String(http.StatusNotFound, "User not found")
+        }
+    })
+
+	// (Optional) Keep the wildcard route from earlier to show multiple features coexisting
+    g.GET("/static/*filepath", func(c *goexpress.Context) {
+        file := c.Param("filepath")
+        c.String(http.StatusOK, "Simulating serving file: "+file)
+    })
 
 	g.Run(":8080")
 }

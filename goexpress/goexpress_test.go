@@ -203,3 +203,58 @@ func TestDeleteRouting(t *testing.T) {
 		t.Errorf("Expected sttus code 200, got %d", w.Code)
 	}
 }
+
+// 7. Testing dynamic route
+func TestDynamicRoute(t *testing.T) {
+	engine := NEW()
+
+	// 1. Setup a mock route
+	engine.GET("/users/:id", func(c *Context) {
+		param := c.Param("id")
+
+		c.String(http.StatusOK, "User Id is: "+param)
+	})
+
+	// 2. Make a fake request
+	req := httptest.NewRequest("GET", "/users/123", nil)
+	w := httptest.NewRecorder()
+
+	// 3. Execute
+	engine.ServeHTTP(w, req)
+
+	// 4. Assertions
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected sttus code 200, got %d", w.Code)
+	}
+
+	expected := "User Id is: 123"
+
+	if w.Body.String() != expected {
+		t.Errorf("Expected body is '%s', got '%s'", expected, w.Body.String())
+	}
+}
+
+// 8. Testing wild card
+func TestWildCardRoute(t *testing.T) {
+	engine := NEW()
+
+	// 1. Setup a mock route
+	engine.GET("/assets/*filepath", func(c *Context) {
+		param := c.Param("filepath")
+
+		c.String(http.StatusOK, "File: "+param)
+	})
+
+	// 2. Make a fake request
+	req := httptest.NewRequest("GET", "/assets/css/main.css", nil)
+	w := httptest.NewRecorder()
+
+	// 3. Execute
+	engine.ServeHTTP(w, req)
+
+	// 4. Assertions
+	expected := "File: css/main.css"
+	   if w.Body.String() != expected {
+        t.Errorf("Expected body '%s', got '%s'", expected, w.Body.String())
+    }
+}

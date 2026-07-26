@@ -12,6 +12,7 @@ type Context struct {
 	Req *http.Request
 	Path string
 	Method string
+	Params map[string]string
 }
 
 // newContext is the internal factory for creating a Context per request
@@ -23,6 +24,13 @@ func newContext(w http.ResponseWriter, r *http.Request) *Context{
 		Method: r.Method,
 	}
 }
+
+
+// Param retrieves a dynamic path parameter by its name
+func (c *Context) Param(key string) string {
+	return c.Params[key]
+}
+
 
 // --- HELPER METHODS ---
 

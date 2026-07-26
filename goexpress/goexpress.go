@@ -8,42 +8,48 @@ import (
 type RouteHandler func(c *Context)
 
 type Engine struct {
-	router map[string]RouteHandler
+	router *router
 }
 
 func NEW() *Engine{
 	return &Engine{
-		router: make(map[string]RouteHandler),
+		router: newRouter(),
 	}
 }
 
-func (e *Engine) GET (path string, handler RouteHandler) {
-	e.router["GET-"+path] = handler
+func (e *Engine) addRoute(method string, pattern string, handler RouteHandler) {
+    e.router.addRoute(method, pattern, handler)
 }
 
-func (e *Engine) POST (path string, handler RouteHandler) {
-	e.router["POST-"+path] = handler
+func (e *Engine) GET (pattern string, handler RouteHandler) {
+	e.addRoute("GET", pattern, handler)
 }
 
-func (e *Engine) PUT (path string, handler RouteHandler) {
-	e.router["PUT-"+path] = handler
+func (e *Engine) POST (pattern string, handler RouteHandler) {
+	e.addRoute("POST", pattern, handler)
 }
 
-func (e *Engine) DELETE (path string, handler RouteHandler) {
-	e.router["DELETE-"+path] = handler
+func (e *Engine) PUT (pattern string, handler RouteHandler) {
+	e.addRoute("PUT", pattern, handler)
+}
+
+func (e *Engine) DELETE (pattern string, handler RouteHandler) {
+	e.addRoute("DELETE", pattern, handler)
 }
 
 
 func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	key := r.Method + "-" + r.URL.Path
+	node, params := e.router.getRoute(r.Method, r.URL.Path)
 
-	if routeHandler, ok := e.router[key]; ok {
+	if node != nil {
 		c := newContext(w, r)
-		routeHandler(c)
+		c.Params = params
+		key := r.Method + "-" + node.pattern
+        e.router.handlers[key](c)
 	} else {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, "404 NOT FOUND: %s\n", r.URL)
-	}
+        w.WriteHeader(http.StatusNotFound)
+        fmt.Fprintf(w, "404 NOT FOUND: %s\n", r.URL)
+    }
 }
 
 func (e *Engine) Run (addr string) error {
