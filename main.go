@@ -168,7 +168,6 @@ func main (){
             c.String(http.StatusNotFound, "User not found")
         }
     })
-
 	// (Optional) Keep the wildcard route from earlier to show multiple features coexisting
     g.GET("/static/*filepath", func(c *goexpress.Context) {
         file := c.Param("filepath")
