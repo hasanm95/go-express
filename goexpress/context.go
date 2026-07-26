@@ -43,6 +43,18 @@ func (c *Context) Next() {
 	}
 }
 
+// Abort flags the framework to immediately stop driving the execution chain.
+func (c *Context) Abort() {
+	// Overwrite the index pointer to the maximum length to break the loop condition
+	c.index = int8(len(c.handlers))
+}
+
+
+// SetHeader attaches a key-value pair to the HTTP response headers.
+func (c *Context) SetHeader(key string, value string) {
+    c.Writer.Header().Set(key, value)
+}
+
 
 // --- HELPER METHODS ---
 

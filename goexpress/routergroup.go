@@ -63,3 +63,8 @@ func (group *RouterGroup) PATCH(pattern string, handler RouteHandler) {
 func (group *RouterGroup) DELETE(pattern string, handler RouteHandler) {
 	group.addRoute("DELETE", pattern, handler)
 }
+
+// OPTIONS defines the method to handle CORS preflight requests
+func (group *RouterGroup) OPTIONS(pattern string, handler RouteHandler) {
+    group.addRoute("OPTIONS", pattern, handler)
+}
