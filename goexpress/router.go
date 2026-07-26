@@ -12,13 +12,13 @@ type node struct {
 
 type router struct {
 	roots map[string]*node // Separate trees for each HTTP Method (GET, POST, etc.)
-	handlers map[string]RouteHandler // Maps the exact pattern to the developer's function
+	handlers map[string][]RouteHandler  // Maps the exact pattern to the developer's function
 }
 
 func newRouter() *router {
 	return &router {
 		roots: make(map[string]*node),
-		handlers: make(map[string]RouteHandler),
+		handlers: make(map[string][]RouteHandler),
 	}
 }
 
@@ -41,16 +41,16 @@ func parsePath(path string)[]string {
 	return parts
 }
 
-func (r *router) addRoute(method string, pattern string, handler RouteHandler) {
+func (r *router) addRoute(method string, pattern string, handlers []RouteHandler) {
 	parts := parsePath(pattern)
 	key := method + "-" + pattern
 
 	if _, ok := r.roots[method]; !ok {
 		r.roots[method] = &node{}
 	}
-
 	r.insert(pattern, parts, 0, r.roots[method])
-	r.handlers[key] = handler
+	
+	r.handlers[key] = handlers
 }
 
 func (r *router) insert (pattern string, parts []string, height int, n *node){
