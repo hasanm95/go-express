@@ -13,6 +13,8 @@ type Context struct {
 	Path string
 	Method string
 	Params map[string]string
+	handlers []RouteHandler
+	index int8
 }
 
 // newContext is the internal factory for creating a Context per request
@@ -22,6 +24,7 @@ func newContext(w http.ResponseWriter, r *http.Request) *Context{
 		Req: r,
 		Path: r.URL.Path,
 		Method: r.Method,
+		index: -1, // Start at -1, so the first Next() call increments it to 0
 	}
 }
 
@@ -29,6 +32,15 @@ func newContext(w http.ResponseWriter, r *http.Request) *Context{
 // Param retrieves a dynamic path parameter by its name
 func (c *Context) Param(key string) string {
 	return c.Params[key]
+}
+
+// Next executes the pending handlers in the chain inside the calling handler.
+func (c *Context) Next() {
+	c.index++
+	for c.index < int8(len(c.handlers)) {
+		c.handlers[c.index](c)
+		c.index++
+	}
 }
 
 
